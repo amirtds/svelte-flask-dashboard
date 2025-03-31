@@ -1,15 +1,21 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
 
-  export let tempThreshold = 25;
-  export let humidityThreshold = 60;
-  let isOpen = false;
+  const props = $props<{
+    tempThreshold?: number;
+    humidityThreshold?: number;
+    onTempChange?: (value: number) => void;
+    onHumidityChange?: (value: number) => void;
+  }>();
+  
+  let localTempThreshold = $state(props.tempThreshold ?? 25);
+  let localHumidityThreshold = $state(props.humidityThreshold ?? 60);
+  let isOpen = $state(false);
 
   function updateSettings() {
-    // Save the settings
-    tempThreshold = tempThreshold;
-    humidityThreshold = humidityThreshold;
-    // Close the panel
+    // Send values back to parent
+    props.onTempChange?.(localTempThreshold);
+    props.onHumidityChange?.(localHumidityThreshold);
     isOpen = false;
   }
 </script>
@@ -25,13 +31,13 @@
       <div class="setting-group">
         <label>
           Temperature (°C)
-          <input type="number" bind:value={tempThreshold} min="0" max="40" step="0.5">
+          <input type="number" bind:value={localTempThreshold} min="0" max="40" step="0.5">
         </label>
       </div>
       <div class="setting-group">
         <label>
           Humidity (%)
-          <input type="number" bind:value={humidityThreshold} min="0" max="100" step="5">
+          <input type="number" bind:value={localHumidityThreshold} min="0" max="100" step="5">
         </label>
       </div>
       <div class="button-group">

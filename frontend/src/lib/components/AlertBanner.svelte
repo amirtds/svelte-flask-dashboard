@@ -1,8 +1,10 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
 
-  export let message: string;
-  export let type: 'warning' | 'critical' = 'warning';
+  const { message, type = 'warning' } = $props<{ 
+    message: string; 
+    type?: 'warning' | 'critical'
+  }>();
 </script>
 
 {#if message}

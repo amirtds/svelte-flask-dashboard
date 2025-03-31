@@ -6,13 +6,32 @@
   import AlertBanner from '$lib/components/AlertBanner.svelte';
   import type { SensorReading } from '$lib/types';
 
-  let currentReading: SensorReading | null = null;
-  let historicalData: SensorReading[] = [];
-  let eventSource: EventSource;
-  let tempThreshold = 25;
-  let humidityThreshold = 60;
-  let alertMessage = '';
-  let alertType: 'warning' | 'critical' = 'warning';
+  let currentReading = $state<SensorReading | null>(null);
+  let historicalData = $state<SensorReading[]>([]);
+  let eventSource = $state<EventSource | undefined>(undefined);
+  let tempThreshold = $state(25);
+  let humidityThreshold = $state(60);
+  let alertMessage = $state('');
+  let alertType = $state<'warning' | 'critical'>('warning');
+
+  function checkAlertConditions(reading: SensorReading) {
+    if (reading.temperature > tempThreshold) {
+      alertMessage = `High temperature detected: ${reading.temperature}°C`;
+      alertType = 'critical';
+    } else if (reading.humidity > humidityThreshold) {
+      alertMessage = `High humidity detected: ${reading.humidity}%`;
+      alertType = 'warning';
+    } else {
+      alertMessage = '';
+    }
+  }
+
+  // Reactive effect to check alerts when thresholds or readings change
+  $effect(() => {
+    if (currentReading) {
+      checkAlertConditions(currentReading);
+    }
+  });
 
   onMount(async () => {
     // Initial data fetch
@@ -31,26 +50,9 @@
     });
 
     return () => {
-      eventSource.close();
+      if (eventSource) eventSource.close();
     };
   });
-
-  function checkAlertConditions(reading: SensorReading) {
-    if (reading.temperature > tempThreshold) {
-      alertMessage = `High temperature detected: ${reading.temperature}°C`;
-      alertType = 'critical';
-    } else if (reading.humidity > humidityThreshold) {
-      alertMessage = `High humidity detected: ${reading.humidity}%`;
-      alertType = 'warning';
-    } else {
-      alertMessage = '';
-    }
-  }
-
-  // Reactive statement to check alerts when thresholds or readings change
-  $: if (currentReading) {
-    checkAlertConditions(currentReading);
-  }
 </script>
 
 <AlertBanner message={alertMessage} type={alertType} />
@@ -146,4 +148,9 @@
   }
 </style>
 
-<SettingsPanel bind:tempThreshold bind:humidityThreshold />
+<SettingsPanel 
+  tempThreshold={tempThreshold} 
+  humidityThreshold={humidityThreshold} 
+  onTempChange={(value) => tempThreshold = value}
+  onHumidityChange={(value) => humidityThreshold = value}  
+/>
